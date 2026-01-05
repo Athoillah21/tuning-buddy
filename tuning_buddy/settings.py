@@ -120,3 +120,30 @@ GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 # Timeout settings for external connections
 DB_CONNECTION_TIMEOUT = 5  # seconds
 QUERY_EXECUTION_TIMEOUT = 8  # seconds (leave buffer for Vercel's 10s limit)
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'tuning_buddy': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
