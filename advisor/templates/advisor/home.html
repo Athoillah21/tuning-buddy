@@ -1,0 +1,123 @@
+{% extends 'advisor/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'advisor:connection_add' %}" class="btn btn-primary">
+    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+    Add Connection
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Welcome Card -->
+    <div class="card card-hero">
+        <div class="card-content">
+            <h2 class="card-title">Welcome to Tuning Buddy</h2>
+            <p class="card-description">
+                AI-powered PostgreSQL query optimization. Connect your database, submit slow queries,
+                and get intelligent recommendations powered by Google Gemini.
+            </p>
+            <div class="hero-features">
+                <div class="feature">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    <span>Analyze EXPLAIN plans</span>
+                </div>
+                <div class="feature">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                    <span>AI-powered recommendations</span>
+                </div>
+                <div class="feature">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                    </svg>
+                    <span>Test with temp tables</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connections Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-header-title">
+                <svg class="card-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <ellipse cx="12" cy="5" rx="9" ry="3" />
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                </svg>
+                Database Connections
+            </h3>
+            <a href="{% url 'advisor:connection_list' %}" class="card-header-link">View All</a>
+        </div>
+        <div class="card-content">
+            {% if connections %}
+            <div class="connection-list">
+                {% for conn in connections %}
+                <div class="connection-item">
+                    <div class="connection-info">
+                        <span class="connection-name">{{ conn.name }}</span>
+                        <span class="connection-db">{{ conn.database }}</span>
+                    </div>
+                    <a href="{% url 'advisor:analyze_query' conn.id %}" class="btn btn-sm btn-secondary">Analyze</a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No connections yet.</p>
+                <a href="{% url 'advisor:connection_add' %}" class="btn btn-primary btn-sm">Add your first
+                    connection</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Queries Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-header-title">
+                <svg class="card-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                Recent Analyses
+            </h3>
+            <a href="{% url 'advisor:query_history' %}" class="card-header-link">View All</a>
+        </div>
+        <div class="card-content">
+            {% if recent_queries %}
+            <div class="query-list">
+                {% for query in recent_queries %}
+                <a href="{% url 'advisor:view_results' query.id %}" class="query-item">
+                    <div class="query-preview">{{ query.original_query|truncatechars:60 }}</div>
+                    <div class="query-meta">
+                        <span class="query-status status-{{ query.analysis_status }}">{{ query.analysis_status }}</span>
+                        {% if query.original_execution_time %}
+                        <span class="query-time">{{ query.original_execution_time|floatformat:2 }}ms</span>
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No queries analyzed yet.</p>
+                <p class="empty-state-hint">Select a connection to start analyzing queries.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

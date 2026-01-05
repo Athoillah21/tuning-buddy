@@ -1,0 +1,156 @@
+{% extends 'advisor/base.html' %}
+
+{% block title %}Query Results{% endblock %}
+{% block page_title %}Optimization Results{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'advisor:analyze_query' query.connection.id %}" class="btn btn-primary">
+    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+    New Analysis
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <!-- Original Query Card -->
+    <div class="card original-query-card">
+        <div class="card-header">
+            <h3 class="card-header-title">
+                <svg class="card-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="16 18 22 12 16 6" />
+                    <polyline points="8 6 2 12 8 18" />
+                </svg>
+                Original Query
+            </h3>
+            <div class="execution-time-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>{{ query.original_execution_time|floatformat:2 }} ms</span>
+            </div>
+        </div>
+        <div class="card-content">
+            <pre class="code-block"><code>{{ query.original_query }}</code></pre>
+        </div>
+    </div>
+
+    <!-- Recommendations Grid -->
+    <div class="section-header">
+        <h2 class="section-title">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+            </svg>
+            Recommendations
+        </h2>
+        {% if query.ai_provider %}
+        <div class="ai-provider-badge" style="--provider-color: {{ query.ai_provider.color|default:'#666' }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" />
+                <path d="M12 6v6l4 2" />
+            </svg>
+            <span>{{ query.ai_provider.provider_name }}</span>
+            <span class="model-name">{{ query.ai_provider.model }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if recommendations %}
+    {% if all_slower %}
+    <div class="filter-notice filter-warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+        All recommendations are slower than original - query may already be optimized
+    </div>
+    {% elif filtered_count %}
+    <div class="filter-notice">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+        </svg>
+        {{ filtered_count }} recommendation{% if filtered_count > 1 %}s{% endif %} hidden (slower than original)
+    </div>
+    {% endif %}
+    <div class="recommendations-grid">
+        {% for rec in recommendations %}
+        <div class="card recommendation-card {% if rec.display_rank == 1 %}recommendation-best{% endif %}">
+            {% if rec.display_rank == 1 %}
+            <div class="best-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon
+                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+                Best
+            </div>
+            {% endif %}
+
+            <div class="card-content">
+                <div class="recommendation-header">
+                    <span class="recommendation-rank">#{{ rec.display_rank }}</span>
+                    <span class="recommendation-type type-{{ rec.recommendation_type }}">
+                        {{ rec.get_recommendation_type_display }}
+                    </span>
+                </div>
+
+                <p class="recommendation-description">{{ rec.description }}</p>
+
+                {% if rec.suggested_indexes %}
+                <div class="recommendation-section">
+                    <h4>Suggested Indexes</h4>
+                    <div class="indexes-list">
+                        {% for idx in rec.suggested_indexes %}
+                        <pre class="code-block code-sm"><code>{{ idx }}</code></pre>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if rec.optimized_query and rec.optimized_query != query.original_query %}
+                <div class="recommendation-section">
+                    <h4>Optimized Query</h4>
+                    <pre class="code-block code-sm"><code>{{ rec.optimized_query }}</code></pre>
+                </div>
+                {% endif %}
+
+                <div class="recommendation-stats">
+                    <div class="stat">
+                        <span class="stat-label">Tested Time</span>
+                        {% if rec.tested_execution_time %}
+                        <span class="stat-value">{{ rec.tested_execution_time|floatformat:2 }} ms</span>
+                        {% else %}
+                        <span class="stat-value stat-na">Not tested</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No recommendations were generated for this query.</p>
+    </div>
+    {% endif %}
+
+    <!-- Execution Plan Viewer -->
+    {% if query.original_plan %}
+    <details class="plan-details">
+        <summary class="plan-summary">
+            <svg class="summary-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+            </svg>
+            View Original Execution Plan
+        </summary>
+        <div class="plan-content">
+            <pre class="code-block"><code>{{ query.original_plan|pprint }}</code></pre>
+        </div>
+    </details>
+    {% endif %}
+</div>
+{% endblock %}

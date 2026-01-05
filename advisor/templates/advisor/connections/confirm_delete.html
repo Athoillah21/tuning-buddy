@@ -1,0 +1,37 @@
+{% extends 'advisor/base.html' %}
+
+{% block title %}Delete Connection{% endblock %}
+{% block page_title %}Delete Connection{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="card card-danger">
+        <div class="card-content">
+            <div class="confirm-delete">
+                <div class="confirm-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
+                    </svg>
+                </div>
+                <h2>Delete "{{ connection.name }}"?</h2>
+                <p>This will permanently delete the connection and all associated query history. This action cannot be
+                    undone.</p>
+
+                <form method="post" class="confirm-actions">
+                    {% csrf_token %}
+                    <a href="{% url 'advisor:connection_list' %}" class="btn btn-ghost">Cancel</a>
+                    <button type="submit" class="btn btn-danger">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        Delete Connection
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

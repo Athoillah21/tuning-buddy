@@ -1,0 +1,12 @@
+# Django PostgreSQL Query Tuning Advisor
+Django>=4.2,<5.0
+psycopg2-binary>=2.9
+cryptography>=41.0
+python-dotenv>=1.0
+dj-database-url>=2.1
+whitenoise>=6.6
+
+# AI Providers
+google-genai>=1.0
+groq>=0.4.0
+openai>=1.0.0

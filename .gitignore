@@ -1,0 +1,17 @@
+.env
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.sqlite3
+db.sqlite3
+.DS_Store
+*.log
+staticfiles/
+.vercel
+node_modules/

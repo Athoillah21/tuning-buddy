@@ -1,0 +1,137 @@
+{% extends 'advisor/base.html' %}
+
+{% block title %}Connections{% endblock %}
+{% block page_title %}Database Connections{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'advisor:connection_add' %}" class="btn btn-primary">
+    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+    Add Connection
+</a>
+{% endblock %}
+
+{% block content %}
+{% if connections %}
+<div class="connections-grid">
+    {% for conn in connections %}
+    <div class="card connection-card">
+        <div class="card-content">
+            <div class="connection-header">
+                <div class="connection-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <ellipse cx="12" cy="5" rx="9" ry="3" />
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                    </svg>
+                </div>
+                <div class="connection-title">
+                    <h3>{{ conn.name }}</h3>
+                    <span class="connection-db">{{ conn.database }}</span>
+                </div>
+            </div>
+
+            <div class="connection-details">
+                <div class="detail-row">
+                    <span class="detail-label">Port</span>
+                    <span class="detail-value">{{ conn.port }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">SSL Mode</span>
+                    <span class="detail-value">{{ conn.ssl_mode }}</span>
+                </div>
+            </div>
+
+            <div class="connection-actions">
+                <button class="btn btn-sm btn-outline test-connection" data-id="{{ conn.id }}">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    Test
+                </button>
+                <a href="{% url 'advisor:analyze_query' conn.id %}" class="btn btn-sm btn-primary">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                    Analyze
+                </a>
+                <a href="{% url 'advisor:connection_edit' conn.id %}" class="btn btn-sm btn-ghost">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                </a>
+                <a href="{% url 'advisor:connection_delete' conn.id %}" class="btn btn-sm btn-ghost btn-danger">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+        <div class="connection-test-result" id="test-result-{{ conn.id }}" style="display: none;"></div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state-large">
+    <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <ellipse cx="12" cy="5" rx="9" ry="3" />
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+        </svg>
+    </div>
+    <h3>No Database Connections</h3>
+    <p>Add your first PostgreSQL connection to start analyzing queries.</p>
+    <a href="{% url 'advisor:connection_add' %}" class="btn btn-primary">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add Connection
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll('.test-connection').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const id = this.dataset.id;
+            const resultDiv = document.getElementById('test-result-' + id);
+
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner"></span> Testing...';
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'connection-test-result testing';
+            resultDiv.textContent = 'Connecting...';
+
+            try {
+                const response = await fetch(`/connections/${id}/test/`);
+                const data = await response.json();
+
+                resultDiv.className = 'connection-test-result ' + (data.success ? 'success' : 'error');
+                resultDiv.textContent = data.message;
+            } catch (error) {
+                resultDiv.className = 'connection-test-result error';
+                resultDiv.textContent = 'Connection test failed: ' + error.message;
+            }
+
+            this.disabled = false;
+            this.innerHTML = `
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            Test
+        `;
+        });
+    });
+</script>
+{% endblock %}
