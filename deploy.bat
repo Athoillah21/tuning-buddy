@@ -1,10 +1,10 @@
 @echo off
-title Tuning Buddy - Vercel Deployment
+title Tuning Buddy - Deployment
 color 0b
 
 echo.
 echo ==============================================
-echo   Turning Buddy - Vercel Deployment Script
+echo   Tuning Buddy - Deployment Script
 echo ==============================================
 echo.
 
