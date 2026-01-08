@@ -1,19 +1,18 @@
 {
   "version": 2,
-  "framework": null,
-  "installCommand": "pip install -r requirements.txt",
-  "buildCommand": "python manage.py collectstatic --noinput && python manage.py migrate --noinput",
-  "outputDirectory": ".",
-  "rewrites": [
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/api/index"
+      "src": "tuning_buddy/wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
-  "functions": {
-    "api/index.py": {
-      "runtime": "python3.12",
-      "maxDuration": 30
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "tuning_buddy/wsgi.py"
     }
-  }
+  ]
 }
