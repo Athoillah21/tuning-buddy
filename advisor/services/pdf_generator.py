@@ -549,6 +549,35 @@ class PDFReportGenerator:
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
             ]))
             elements.append(opt_table)
+            elements.append(Spacer(1, 4))
+        
+        # Tested Execution Plan
+        if hasattr(rec, 'tested_plan') and rec.tested_plan:
+            elements.append(Paragraph("<b>Optimized Execution Plan:</b>", self.styles['Small']))
+            
+            # Use same truncation logic as main execution plan
+            plan_json = json.dumps(rec.tested_plan, indent=2, default=str)
+            lines = plan_json.split('\n')
+            if len(lines) > 20: 
+                lines = lines[:20]
+                lines.append('... (full plan available in database)')
+            plan_json = '\n'.join(lines)
+            
+            plan_json = plan_json.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            plan_json = plan_json.replace('\n', '<br/>')
+            plan_json = plan_json.replace('  ', '&nbsp;&nbsp;')
+            
+            plan_para = Paragraph(f"<font face='Courier' size='8'>{plan_json}</font>", self.styles['CodeParagraph'])
+            plan_table = Table([[plan_para]], colWidths=[self.content_width])
+            plan_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_GRAY),
+                ('BOX', (0, 0), (-1, -1), 1, self.BORDER),
+                ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ]))
+            elements.append(plan_table)
         
         # Divider
         elements.append(Spacer(1, 5))
