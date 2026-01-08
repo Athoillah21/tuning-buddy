@@ -467,19 +467,12 @@ class PDFReportGenerator:
             textColor=self.PRIMARY,
         ))
         
-        # Performance badge
-        perf_badge = Paragraph(perf_text, ParagraphStyle(
-            'PerfBadge',
-            fontSize=10,
-            textColor=perf_color,
-            fontName='Helvetica-Bold',
-        ))
+
         
-        # Header row
-        header_table = Table([[header, perf_badge]], colWidths=[self.content_width*0.6, self.content_width*0.4])
+        # Header row (Title only)
+        header_table = Table([[header]], colWidths=[self.content_width])
         header_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (0, 0), 'LEFT'),
-            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
         elements.append(header_table)
@@ -488,6 +481,18 @@ class PDFReportGenerator:
         # Description
         desc_text = rec.description
         elements.append(Paragraph(desc_text, self.styles['Normal']))
+        elements.append(Spacer(1, 8))
+        
+        # Performance/Execution Time (Moved to body)
+        # Create a new style for body performance text if needed, or reuse PerfBadge with adjustments
+        perf_para = Paragraph(perf_text, ParagraphStyle(
+            'PerfBody',
+            parent=self.styles['Normal'],
+            textColor=perf_color,
+            fontName='Helvetica-Bold',
+            fontSize=10,
+        ))
+        elements.append(perf_para)
         elements.append(Spacer(1, 8))
         
         # Scan Type Improvement Analysis
