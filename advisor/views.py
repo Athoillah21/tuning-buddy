@@ -4,7 +4,7 @@ Views for the Query Tuning Advisor.
 import json
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -13,6 +13,7 @@ from .models import Connection, QueryHistory, Recommendation
 from .forms import ConnectionForm, QueryForm
 from .services.db_connector import DBConnector, DatabaseConnectionError
 from .services.optimizer import QueryOptimizer, OptimizationError
+from .services.pdf_generator import generate_optimization_report
 
 logger = logging.getLogger(__name__)
 
@@ -258,6 +259,25 @@ def history_delete(request, pk):
     return render(request, 'advisor/confirm_delete_history.html', {
         'query': query,
     })
+
+
+def download_pdf(request, query_id):
+    """Generate and download PDF report for query analysis."""
+    query_history = get_object_or_404(QueryHistory, pk=query_id)
+    recommendations = query_history.recommendations.all()
+    
+    try:
+        pdf_buffer = generate_optimization_report(query_history, recommendations)
+        
+        response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+        filename = f"query_report_{query_id}_{query_history.created_at.strftime('%Y%m%d')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+    except Exception as e:
+        logger.exception("Error generating PDF")
+        messages.error(request, f"Failed to generate PDF: {str(e)}")
+        return redirect('advisor:view_results', query_id=query_id)
 
 
 @require_http_methods(["POST"])

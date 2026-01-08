@@ -20,6 +20,7 @@ urlpatterns = [
     # Query analysis
     path('analyze/<int:connection_id>/', views.analyze_query, name='analyze_query'),
     path('results/<int:query_id>/', views.view_results, name='view_results'),
+    path('results/<int:query_id>/pdf/', views.download_pdf, name='download_pdf'),
     
     # History
     path('history/', views.query_history, name='query_history'),
