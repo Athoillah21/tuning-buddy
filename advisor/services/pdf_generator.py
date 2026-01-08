@@ -253,10 +253,14 @@ class PDFReportGenerator:
         
         elements.append(Paragraph("📊 Execution Plan", self.styles['SectionHeader']))
         
-        # Extract plan info
+        # Handle different plan data formats
+        plan = None
         if isinstance(plan_data, list) and plan_data:
             plan = plan_data[0]
-            
+        elif isinstance(plan_data, dict):
+            plan = plan_data
+        
+        if plan:
             # Summary metrics
             planning_time = plan.get('Planning Time', 'N/A')
             execution_time = plan.get('Execution Time', 'N/A')
@@ -290,8 +294,8 @@ class PDFReportGenerator:
             # Pretty print JSON and wrap
             plan_json = json.dumps(plan, indent=2, default=str)
             # Truncate if too long
-            if len(plan_json) > 5000:
-                plan_json = plan_json[:5000] + "\n... (truncated)"
+            if len(plan_json) > 8000:
+                plan_json = plan_json[:8000] + "\n... (truncated)"
             
             plan_json = plan_json.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
             plan_json = plan_json.replace('\n', '<br/>')
@@ -310,6 +314,32 @@ class PDFReportGenerator:
             ]))
             
             elements.append(plan_table)
+        else:
+            # Show raw data if format unknown
+            try:
+                raw_text = json.dumps(plan_data, indent=2, default=str)
+            except:
+                raw_text = str(plan_data)
+            
+            if len(raw_text) > 8000:
+                raw_text = raw_text[:8000] + "\n... (truncated)"
+            
+            raw_text = raw_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            raw_text = raw_text.replace('\n', '<br/>')
+            raw_text = raw_text.replace('  ', '&nbsp;&nbsp;')
+            
+            raw_para = Paragraph(f"<font face='Courier' size='7'>{raw_text}</font>", self.styles['CodeParagraph'])
+            
+            raw_table = Table([[raw_para]], colWidths=[self.content_width])
+            raw_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_GRAY),
+                ('BOX', (0, 0), (-1, -1), 1, self.BORDER),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ]))
+            elements.append(raw_table)
         
         elements.append(Spacer(1, 20))
         return elements
