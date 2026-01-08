@@ -443,14 +443,14 @@ class PDFReportGenerator:
             improvement = ((original_time - tested_time) / original_time) * 100
             if improvement > 0:
                 perf_color = self.SUCCESS
-                perf_text = f"✓ {improvement:.1f}% faster ({tested_time:.2f} ms)"
+                perf_text = f"✓ Execution time : {tested_time:.2f} ms ({improvement:.1f}% faster)"
                 is_faster = True
             else:
                 perf_color = self.DANGER
-                perf_text = f"✗ {abs(improvement):.1f}% slower ({tested_time:.2f} ms)"
+                perf_text = f"✗ Execution time : {tested_time:.2f} ms ({abs(improvement):.1f}% slower)"
         elif tested_time:
             perf_color = self.GRAY
-            perf_text = f"{tested_time:.2f} ms"
+            perf_text = f"Execution time : {tested_time:.2f} ms"
         else:
             perf_color = self.GRAY
             perf_text = "Not tested"
