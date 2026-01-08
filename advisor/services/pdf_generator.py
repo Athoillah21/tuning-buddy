@@ -490,11 +490,27 @@ class PDFReportGenerator:
         elements.append(Paragraph(desc_text, self.styles['Normal']))
         elements.append(Spacer(1, 8))
         
-        # Scan Type Improvement Inference
-        if scan_info and scan_info.get('has_seq_scan') and is_faster and rec.suggested_indexes:
-            scan_res_text = "<font color='#00a854'><b>✓ Potential Scan Improvement:</b> Likely resolved to Index Scan</font>"
-            elements.append(Paragraph(scan_res_text, self.styles['Small']))
-            elements.append(Spacer(1, 8))
+        # Scan Type Improvement Analysis
+        if scan_info and scan_info.get('has_seq_scan'):
+            # Check if we have a tested plan to confirm
+            if hasattr(rec, 'tested_plan') and rec.tested_plan:
+                tested_scan_info = self._extract_scan_types(rec.tested_plan)
+                
+                if not tested_scan_info['has_seq_scan']:
+                    # Confirmed Resolution
+                    scan_res_text = "<font color='#00a854'><b>✓ Confirmed: Seq Scan replaced by Index Scan</b></font>"
+                    elements.append(Paragraph(scan_res_text, self.styles['Small']))
+                else:
+                    # Persists
+                    scan_res_text = "<font color='#faad14'><b>⚠️ Warning: Sequential Scan persists in tested plan</b></font>"
+                    elements.append(Paragraph(scan_res_text, self.styles['Small']))
+                elements.append(Spacer(1, 8))
+            
+            # Fallback to inference if no tested plan (legacy support)
+            elif is_faster and rec.suggested_indexes:
+                scan_res_text = "<font color='#00a854'><b>✓ Potential Scan Improvement:</b> Likely resolved to Index Scan (inferred)</font>"
+                elements.append(Paragraph(scan_res_text, self.styles['Small']))
+                elements.append(Spacer(1, 8))
         
         # Suggested indexes
         if rec.suggested_indexes:
