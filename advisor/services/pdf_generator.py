@@ -420,6 +420,8 @@ class PDFReportGenerator:
         """Create recommendations section."""
         elements = []
         
+        # Start Recommendations section on a new page
+        elements.append(PageBreak())
         elements.append(Paragraph("💡 Recommendations", self.styles['SectionHeader']))
         
         if not recommendations:
@@ -427,6 +429,8 @@ class PDFReportGenerator:
             return elements
         
         for i, rec in enumerate(recommendations, 1):
+            if i > 1:
+                elements.append(PageBreak())
             elements.extend(self._create_recommendation_card(rec, i, original_time, scan_info))
             elements.append(Spacer(1, 15))
         
