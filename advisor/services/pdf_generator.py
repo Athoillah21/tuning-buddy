@@ -291,12 +291,12 @@ class PDFReportGenerator:
             ('BOX', (0, 0), (-1, -1), 1, self.BORDER),
             ('LEFTPADDING', (0, 0), (-1, -1), 12),
             ('RIGHTPADDING', (0, 0), (-1, -1), 12),
-            ('TOPPADDING', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ]))
         
         elements.append(query_table)
-        elements.append(Spacer(1, 15))
+        elements.append(Spacer(1, 10))
         
         return elements
     
@@ -318,28 +318,16 @@ class PDFReportGenerator:
             planning_time = plan.get('Planning Time', 'N/A')
             execution_time = plan.get('Execution Time', 'N/A')
             
-            summary_data = [
-                ['Planning Time', 'Execution Time'],
-                [
-                    f"{planning_time} ms" if isinstance(planning_time, (int, float)) else str(planning_time),
-                    f"{execution_time} ms" if isinstance(execution_time, (int, float)) else str(execution_time)
-                ]
-            ]
+            # Summary metrics (Compact)
+            planning_time = plan.get('Planning Time', 'N/A')
+            execution_time = plan.get('Execution Time', 'N/A')
             
-            summary_table = Table(summary_data, colWidths=[self.content_width/2]*2)
-            summary_table.setStyle(TableStyle([
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica'),
-                ('FONTSIZE', (0, 0), (-1, 0), 9),
-                ('TEXTCOLOR', (0, 0), (-1, 0), self.GRAY),
-                ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 1), (-1, 1), 12),
-                ('TEXTCOLOR', (0, 1), (-1, 1), self.DARK),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('TOPPADDING', (0, 0), (-1, -1), 8),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ]))
-            elements.append(summary_table)
-            elements.append(Spacer(1, 10))
+            p_time_str = f"{planning_time} ms" if isinstance(planning_time, (int, float)) else str(planning_time)
+            e_time_str = f"{execution_time} ms" if isinstance(execution_time, (int, float)) else str(execution_time)
+            
+            metrics_text = f"<b>Planning Time:</b> {p_time_str} &nbsp;|&nbsp; <b>Execution Time:</b> {e_time_str}"
+            elements.append(Paragraph(metrics_text, self.styles['Normal']))
+            elements.append(Spacer(1, 6))
             
             # Scan Type Analysis
             scan_info = self._extract_scan_types(plan_data)
@@ -360,11 +348,11 @@ class PDFReportGenerator:
             
             # Show scan nodes list
             if scan_info['scan_nodes']:
-                elements.append(Spacer(1, 5))
+                elements.append(Spacer(1, 4))
                 nodes_text = '<br/>'.join(scan_info['scan_nodes'][:5])  # Max 5 nodes
                 elements.append(Paragraph(f"<font size='8'>{nodes_text}</font>", self.styles['Normal']))
             
-            elements.append(Spacer(1, 8))
+            elements.append(Spacer(1, 6))
             
             # Extract key plan info for summary display
             plan_info = plan.get('Plan', plan)
@@ -374,14 +362,10 @@ class PDFReportGenerator:
                 total_cost = plan_info.get('Total Cost', 'N/A')
                 actual_rows = plan_info.get('Actual Rows', plan_info.get('Plan Rows', 'N/A'))
                 
-                elements.append(Paragraph("Plan Summary:", self.styles['SubHeader']))
-                
-                plan_summary = f"""<b>Node Type:</b> {node_type}<br/>
-<b>Total Cost:</b> {total_cost}<br/>
-<b>Rows:</b> {actual_rows}"""
+                plan_summary = f"<b>Plan Summary:</b> Node Type: {node_type} | Total Cost: {total_cost} | Rows: {actual_rows}"
                 
                 elements.append(Paragraph(plan_summary, self.styles['Normal']))
-                elements.append(Spacer(1, 8))
+                elements.append(Spacer(1, 6))
             
             # Show truncated plan (max 30 lines to fit on page)
             elements.append(Paragraph("Plan Details (truncated):", self.styles['SubHeader']))
@@ -403,10 +387,10 @@ class PDFReportGenerator:
             plan_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_GRAY),
                 ('BOX', (0, 0), (-1, -1), 1, self.BORDER),
-                ('LEFTPADDING', (0, 0), (-1, -1), 10),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-                ('TOPPADDING', (0, 0), (-1, -1), 8),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
             ]))
             
             elements.append(plan_table)
