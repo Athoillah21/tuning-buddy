@@ -91,7 +91,7 @@ class PDFReportGenerator:
         ))
         # Normal text
         self.styles.add(ParagraphStyle(
-            name='BodyText',
+            name='CustomBody',
             fontSize=10,
             leading=14,
             textColor=self.DARK,
@@ -321,7 +321,7 @@ class PDFReportGenerator:
         elements.append(Paragraph("💡 Recommendations", self.styles['SectionHeader']))
         
         if not recommendations:
-            elements.append(Paragraph("No recommendations were generated for this query.", self.styles['BodyText']))
+            elements.append(Paragraph("No recommendations were generated for this query.", self.styles['Normal']))
             return elements
         
         for i, rec in enumerate(recommendations, 1):
@@ -383,7 +383,7 @@ class PDFReportGenerator:
         
         # Description
         desc_text = rec.description
-        elements.append(Paragraph(desc_text, self.styles['BodyText']))
+        elements.append(Paragraph(desc_text, self.styles['Normal']))
         elements.append(Spacer(1, 8))
         
         # Suggested indexes
