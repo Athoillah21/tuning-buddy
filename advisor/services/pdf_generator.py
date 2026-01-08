@@ -127,9 +127,6 @@ class PDFReportGenerator:
         # Header Section
         story.extend(self._create_header(query_history))
         
-        # Summary Metrics
-        story.extend(self._create_metrics_section(query_history, recommendations))
-        
         # Original Query Section
         story.extend(self._create_query_section(query_history))
         
