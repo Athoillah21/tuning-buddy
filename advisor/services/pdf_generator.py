@@ -248,7 +248,7 @@ class PDFReportGenerator:
         return elements
     
     def _create_execution_plan_section(self, plan_data) -> List:
-        """Create execution plan section with details."""
+        """Create execution plan section with summary (truncated to fit page)."""
         elements = []
         
         elements.append(Paragraph("📊 Execution Plan", self.styles['SectionHeader']))
@@ -288,14 +288,32 @@ class PDFReportGenerator:
             elements.append(summary_table)
             elements.append(Spacer(1, 10))
             
-            # Full plan JSON (formatted)
-            elements.append(Paragraph("Plan Details:", self.styles['SubHeader']))
+            # Extract key plan info for summary display
+            plan_info = plan.get('Plan', plan)
+            if isinstance(plan_info, dict):
+                # Get key metrics
+                node_type = plan_info.get('Node Type', 'Unknown')
+                total_cost = plan_info.get('Total Cost', 'N/A')
+                actual_rows = plan_info.get('Actual Rows', plan_info.get('Plan Rows', 'N/A'))
+                
+                elements.append(Paragraph("Plan Summary:", self.styles['SubHeader']))
+                
+                plan_summary = f"""<b>Node Type:</b> {node_type}<br/>
+<b>Total Cost:</b> {total_cost}<br/>
+<b>Rows:</b> {actual_rows}"""
+                
+                elements.append(Paragraph(plan_summary, self.styles['Normal']))
+                elements.append(Spacer(1, 8))
             
-            # Pretty print JSON and wrap
+            # Show truncated plan (max 30 lines to fit on page)
+            elements.append(Paragraph("Plan Details (truncated):", self.styles['SubHeader']))
+            
             plan_json = json.dumps(plan, indent=2, default=str)
-            # Truncate if too long
-            if len(plan_json) > 8000:
-                plan_json = plan_json[:8000] + "\n... (truncated)"
+            lines = plan_json.split('\n')
+            if len(lines) > 30:
+                lines = lines[:30]
+                lines.append('... (full plan available in database)')
+            plan_json = '\n'.join(lines)
             
             plan_json = plan_json.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
             plan_json = plan_json.replace('\n', '<br/>')
@@ -315,31 +333,7 @@ class PDFReportGenerator:
             
             elements.append(plan_table)
         else:
-            # Show raw data if format unknown
-            try:
-                raw_text = json.dumps(plan_data, indent=2, default=str)
-            except:
-                raw_text = str(plan_data)
-            
-            if len(raw_text) > 8000:
-                raw_text = raw_text[:8000] + "\n... (truncated)"
-            
-            raw_text = raw_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-            raw_text = raw_text.replace('\n', '<br/>')
-            raw_text = raw_text.replace('  ', '&nbsp;&nbsp;')
-            
-            raw_para = Paragraph(f"<font face='Courier' size='7'>{raw_text}</font>", self.styles['CodeParagraph'])
-            
-            raw_table = Table([[raw_para]], colWidths=[self.content_width])
-            raw_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_GRAY),
-                ('BOX', (0, 0), (-1, -1), 1, self.BORDER),
-                ('LEFTPADDING', (0, 0), (-1, -1), 10),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-                ('TOPPADDING', (0, 0), (-1, -1), 8),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ]))
-            elements.append(raw_table)
+            elements.append(Paragraph("Execution plan data not available.", self.styles['Normal']))
         
         elements.append(Spacer(1, 20))
         return elements
