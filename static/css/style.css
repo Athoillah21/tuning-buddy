@@ -444,6 +444,16 @@ body {
   background: var(--danger-subtle);
 }
 
+.btn-danger-ghost {
+  background: transparent;
+  color: var(--danger);
+}
+
+.btn-danger-ghost:hover {
+  background: var(--danger-subtle);
+  color: #e8192d;
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

@@ -14,7 +14,7 @@
                 <th>Execution Time</th>
                 <th>Status</th>
                 <th>Date</th>
-                <th></th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -37,13 +37,20 @@
                     </span>
                 </td>
                 <td>{{ q.created_at|date:"M d, Y H:i" }}</td>
-                <td>
+                <td class="action-cell">
                     <a href="{% url 'advisor:view_results' q.id %}" class="btn btn-sm btn-ghost">
                         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                             <circle cx="12" cy="12" r="3" />
                         </svg>
                         View
+                    </a>
+                    <a href="{% url 'advisor:history_delete' q.id %}" class="btn btn-sm btn-danger-ghost">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                        </svg>
+                        Delete
                     </a>
                 </td>
             </tr>

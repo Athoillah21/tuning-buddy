@@ -56,7 +56,7 @@ git add .
 git commit -m "Initial commit - PostgreSQL Query Tuning Advisor"
 
 # Add your GitHub repo (replace YOUR_USERNAME)
-git remote add origin https://github.com/YOUR_USERNAME/tuning-buddy.git
+git remote add origin https://github.com/Athoillah21/tuning-buddy.git
 
 # Push
 git branch -M main

@@ -115,6 +115,11 @@ def analyze_query(request, connection_id):
     """Query analysis page."""
     connection = get_object_or_404(Connection, pk=connection_id)
     
+    # Check if password has expired (older than 1 hour)
+    if connection.is_password_expired():
+        messages.warning(request, 'Password has expired. Please re-enter your password to continue.')
+        return redirect('advisor:connection_edit', pk=connection_id)
+    
     if request.method == 'POST':
         form = QueryForm(request.POST)
         if form.is_valid():
@@ -238,6 +243,20 @@ def query_history(request):
     
     return render(request, 'advisor/history.html', {
         'queries': queries,
+    })
+
+
+def history_delete(request, pk):
+    """Delete a history record."""
+    query = get_object_or_404(QueryHistory, pk=pk)
+    
+    if request.method == 'POST':
+        query.delete()
+        messages.success(request, 'History record deleted successfully!')
+        return redirect('advisor:query_history')
+    
+    return render(request, 'advisor/confirm_delete_history.html', {
+        'query': query,
     })
 
 

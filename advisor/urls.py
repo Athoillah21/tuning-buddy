@@ -23,6 +23,7 @@ urlpatterns = [
     
     # History
     path('history/', views.query_history, name='query_history'),
+    path('history/<int:pk>/delete/', views.history_delete, name='history_delete'),
     
     # API endpoints for AJAX
     path('api/analyze/', views.api_analyze, name='api_analyze'),

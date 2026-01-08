@@ -57,6 +57,7 @@ class Connection(models.Model, EncryptedFieldMixin):
     ssl_mode = models.CharField(max_length=20, choices=SSL_MODES, default='prefer')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    password_updated_at = models.DateTimeField(auto_now_add=True, help_text="When password was last set")
     
     class Meta:
         ordering = ['-updated_at']
@@ -66,6 +67,18 @@ class Connection(models.Model, EncryptedFieldMixin):
     
     def save(self, *args, **kwargs):
         """Encrypt sensitive fields before saving."""
+        # Track if password changed (for expiry tracking)
+        password_changed = False
+        if self.pk:
+            try:
+                old = Connection.objects.get(pk=self.pk)
+                if self.password != old.password:
+                    password_changed = True
+            except Connection.DoesNotExist:
+                password_changed = True
+        else:
+            password_changed = True
+        
         # Only encrypt if the value appears to be plain text
         if self.host and not self.host.startswith('gAAAAA'):
             self.host = self.encrypt(self.host)
@@ -73,7 +86,22 @@ class Connection(models.Model, EncryptedFieldMixin):
             self.username = self.encrypt(self.username)
         if self.password and not self.password.startswith('gAAAAA'):
             self.password = self.encrypt(self.password)
+            password_changed = True
+        
+        # Update password timestamp if password changed
+        if password_changed:
+            from django.utils import timezone
+            self.password_updated_at = timezone.now()
+        
         super().save(*args, **kwargs)
+    
+    def is_password_expired(self) -> bool:
+        """Check if password is older than 1 hour."""
+        from django.utils import timezone
+        from datetime import timedelta
+        if not self.password_updated_at:
+            return True
+        return timezone.now() - self.password_updated_at > timedelta(hours=1)
     
     def get_decrypted_host(self) -> str:
         return self.decrypt(self.host)
