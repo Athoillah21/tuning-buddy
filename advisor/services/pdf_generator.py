@@ -31,6 +31,56 @@ class PDFReportGenerator:
     LIGHT_GRAY = colors.HexColor('#f0f2f5')
     BORDER = colors.HexColor('#e8e8e8')
     
+    # Scan types to track
+    SEQ_SCAN_TYPES = ['Seq Scan', 'Parallel Seq Scan']
+    INDEX_SCAN_TYPES = ['Index Scan', 'Index Only Scan', 'Bitmap Index Scan', 'Bitmap Heap Scan']
+    
+    @staticmethod
+    def _extract_scan_types(plan_data) -> dict:
+        """
+        Extract scan types from execution plan.
+        Returns dict with: has_seq_scan, has_index_scan, scan_nodes list
+        """
+        result = {
+            'has_seq_scan': False,
+            'has_index_scan': False,
+            'scan_nodes': [],
+            'seq_scan_tables': [],
+            'index_scan_tables': []
+        }
+        
+        def traverse_plan(node):
+            if isinstance(node, dict):
+                node_type = node.get('Node Type', '')
+                table_name = node.get('Relation Name', node.get('Alias', ''))
+                
+                if node_type in PDFReportGenerator.SEQ_SCAN_TYPES:
+                    result['has_seq_scan'] = True
+                    result['scan_nodes'].append(f"⚠️ {node_type}: {table_name}")
+                    if table_name:
+                        result['seq_scan_tables'].append(table_name)
+                elif node_type in PDFReportGenerator.INDEX_SCAN_TYPES:
+                    result['has_index_scan'] = True
+                    index_name = node.get('Index Name', '')
+                    result['scan_nodes'].append(f"✓ {node_type}: {table_name} ({index_name})")
+                    if table_name:
+                        result['index_scan_tables'].append(table_name)
+                
+                # Traverse child plans
+                for child in node.get('Plans', []):
+                    traverse_plan(child)
+                # Also check 'Plan' key
+                if 'Plan' in node:
+                    traverse_plan(node['Plan'])
+        
+        # Handle different input formats
+        if isinstance(plan_data, list) and plan_data:
+            traverse_plan(plan_data[0])
+        elif isinstance(plan_data, dict):
+            traverse_plan(plan_data)
+        
+        return result
+    
     def __init__(self):
         self.styles = getSampleStyleSheet()
         self._setup_custom_styles()
@@ -130,12 +180,18 @@ class PDFReportGenerator:
         # Original Query Section
         story.extend(self._create_query_section(query_history))
         
+        # Scan Type Analysis (extract for use in recommendations too)
+        orig_plan = query_history.original_plan
+        scan_info = {'has_seq_scan': False, 'has_index_scan': False}
+        if orig_plan:
+            scan_info = self._extract_scan_types(orig_plan)
+        
         # Execution Plan Section
-        if query_history.original_plan:
-            story.extend(self._create_execution_plan_section(query_history.original_plan))
+        if orig_plan:
+            story.extend(self._create_execution_plan_section(orig_plan))
         
         # Recommendations Section
-        story.extend(self._create_recommendations_section(recommendations, query_history.original_execution_time))
+        story.extend(self._create_recommendations_section(recommendations, query_history.original_execution_time, scan_info))
         
         # Footer
         story.extend(self._create_footer(query_history))
@@ -285,6 +341,31 @@ class PDFReportGenerator:
             elements.append(summary_table)
             elements.append(Spacer(1, 10))
             
+            # Scan Type Analysis
+            scan_info = self._extract_scan_types(plan_data)
+            
+            elements.append(Paragraph("Scan Type Analysis:", self.styles['SubHeader']))
+            
+            if scan_info['has_seq_scan']:
+                # Warning for Seq Scan
+                seq_tables = ', '.join(scan_info['seq_scan_tables']) if scan_info['seq_scan_tables'] else 'tables'
+                warning_text = f"<font color='#f5222d'><b>⚠️ WARNING: Sequential Scan detected on: {seq_tables}</b></font><br/>Sequential scans can be slow on large tables. Consider adding indexes."
+                elements.append(Paragraph(warning_text, self.styles['Normal']))
+            elif scan_info['has_index_scan']:
+                # Good - using indexes
+                success_text = "<font color='#00a854'><b>✓ GOOD: Query is using Index Scans</b></font><br/>The query is efficiently using indexes."
+                elements.append(Paragraph(success_text, self.styles['Normal']))
+            else:
+                elements.append(Paragraph("No scan operations detected.", self.styles['Normal']))
+            
+            # Show scan nodes list
+            if scan_info['scan_nodes']:
+                elements.append(Spacer(1, 5))
+                nodes_text = '<br/>'.join(scan_info['scan_nodes'][:5])  # Max 5 nodes
+                elements.append(Paragraph(f"<font size='8'>{nodes_text}</font>", self.styles['Normal']))
+            
+            elements.append(Spacer(1, 8))
+            
             # Extract key plan info for summary display
             plan_info = plan.get('Plan', plan)
             if isinstance(plan_info, dict):
@@ -335,7 +416,7 @@ class PDFReportGenerator:
         elements.append(Spacer(1, 20))
         return elements
     
-    def _create_recommendations_section(self, recommendations, original_time) -> List:
+    def _create_recommendations_section(self, recommendations, original_time, scan_info=None) -> List:
         """Create recommendations section."""
         elements = []
         
@@ -346,22 +427,24 @@ class PDFReportGenerator:
             return elements
         
         for i, rec in enumerate(recommendations, 1):
-            elements.extend(self._create_recommendation_card(rec, i, original_time))
+            elements.extend(self._create_recommendation_card(rec, i, original_time, scan_info))
             elements.append(Spacer(1, 15))
         
         return elements
     
-    def _create_recommendation_card(self, rec, index: int, original_time: float) -> List:
+    def _create_recommendation_card(self, rec, index: int, original_time: float, scan_info=None) -> List:
         """Create a styled recommendation card."""
         elements = []
         
         # Determine improvement color
         tested_time = rec.tested_execution_time
+        is_faster = False
         if tested_time and original_time:
             improvement = ((original_time - tested_time) / original_time) * 100
             if improvement > 0:
                 perf_color = self.SUCCESS
                 perf_text = f"✓ {improvement:.1f}% faster ({tested_time:.2f} ms)"
+                is_faster = True
             else:
                 perf_color = self.DANGER
                 perf_text = f"✗ {abs(improvement):.1f}% slower ({tested_time:.2f} ms)"
@@ -406,6 +489,12 @@ class PDFReportGenerator:
         desc_text = rec.description
         elements.append(Paragraph(desc_text, self.styles['Normal']))
         elements.append(Spacer(1, 8))
+        
+        # Scan Type Improvement Inference
+        if scan_info and scan_info.get('has_seq_scan') and is_faster and rec.suggested_indexes:
+            scan_res_text = "<font color='#00a854'><b>✓ Potential Scan Improvement:</b> Likely resolved to Index Scan</font>"
+            elements.append(Paragraph(scan_res_text, self.styles['Small']))
+            elements.append(Spacer(1, 8))
         
         # Suggested indexes
         if rec.suggested_indexes:
