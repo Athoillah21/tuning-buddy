@@ -172,6 +172,7 @@ class Recommendation(models.Model):
     optimized_query = models.TextField(null=True, blank=True, help_text="Rewritten query if applicable")
     suggested_indexes = models.JSONField(default=list, help_text="List of CREATE INDEX statements")
     tested_execution_time = models.FloatField(null=True, blank=True, help_text="Tested execution time in ms")
+    tested_plan = models.JSONField(null=True, blank=True, help_text="Execution plan from testing")
     improvement_percentage = models.FloatField(null=True, blank=True)
     rank = models.IntegerField(default=0, help_text="Ranking by improvement")
     gemini_raw_response = models.JSONField(null=True, blank=True, help_text="Raw Gemini response for debugging")

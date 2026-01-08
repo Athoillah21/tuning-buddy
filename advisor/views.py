@@ -156,6 +156,7 @@ def analyze_query(request, connection_id):
                             optimized_query=rec.get('optimized_query', ''),
                             suggested_indexes=rec.get('suggested_indexes', []),
                             tested_execution_time=rec.get('tested_execution_time'),
+                            tested_plan=rec.get('test_result', {}).get('plan'),
                             improvement_percentage=rec.get('improvement_percentage'),
                             rank=rec.get('rank', 0),
                             gemini_raw_response=rec,
