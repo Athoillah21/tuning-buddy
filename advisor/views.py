@@ -160,6 +160,12 @@ def analyze_query(request, connection_id):
                             improvement_percentage=rec.get('improvement_percentage'),
                             rank=rec.get('rank', 0),
                             gemini_raw_response=rec,
+                            # New accumulated fields
+                            all_indexes_applied=rec.get('all_indexes_applied', []),
+                            final_optimized_query=rec.get('final_optimized_query', ''),
+                            query_was_rewritten=rec.get('query_was_rewritten', False),
+                            optimization_attempts=rec.get('optimization_attempts', 1),
+                            seq_scan_eliminated=rec.get('seq_scan_eliminated', False),
                         )
                     
                     return redirect('advisor:view_results', query_id=query_history.id)

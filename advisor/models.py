@@ -176,6 +176,14 @@ class Recommendation(models.Model):
     improvement_percentage = models.FloatField(null=True, blank=True)
     rank = models.IntegerField(default=0, help_text="Ranking by improvement")
     gemini_raw_response = models.JSONField(null=True, blank=True, help_text="Raw Gemini response for debugging")
+    
+    # Accumulated data from iterative optimization
+    all_indexes_applied = models.JSONField(default=list, null=True, blank=True, help_text="All indexes created across iterations")
+    final_optimized_query = models.TextField(null=True, blank=True, help_text="Final query after all iterations")
+    query_was_rewritten = models.BooleanField(default=False, help_text="Whether query was modified from original")
+    optimization_attempts = models.IntegerField(default=1, help_text="Number of optimization iterations")
+    seq_scan_eliminated = models.BooleanField(default=False, help_text="Whether seq scan was eliminated")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

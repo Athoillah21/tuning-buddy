@@ -180,6 +180,35 @@ class ExecutionPlanAnalyzer:
         }
     
     @staticmethod
+    def has_seq_scan(plan: Dict[str, Any]) -> bool:
+        """
+        Check if an execution plan contains any sequential scans.
+        
+        Args:
+            plan: EXPLAIN ANALYZE output in JSON format
+            
+        Returns:
+            True if any sequential scan is present, False otherwise
+        """
+        def traverse_for_seq_scan(node: Dict[str, Any]) -> bool:
+            if not isinstance(node, dict):
+                return False
+            
+            node_type = node.get('Node Type', '')
+            if node_type == 'Seq Scan':
+                return True
+            
+            # Check child nodes
+            for child in node.get('Plans', []):
+                if traverse_for_seq_scan(child):
+                    return True
+            
+            return False
+        
+        plan_node = plan.get('Plan', plan)
+        return traverse_for_seq_scan(plan_node)
+    
+    @staticmethod
     def format_plan_for_display(plan: Dict[str, Any], indent: int = 0) -> str:
         """
         Format an execution plan for human-readable display.

@@ -125,7 +125,7 @@ GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 
 # Timeout settings for external connections
 DB_CONNECTION_TIMEOUT = 5  # seconds
-QUERY_EXECUTION_TIMEOUT = 8  # seconds (leave buffer for Vercel's 10s limit)
+QUERY_EXECUTION_TIMEOUT = 300  # seconds (5 minutes for local development)
 
 # Logging Configuration
 LOGGING = {

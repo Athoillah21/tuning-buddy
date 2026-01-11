@@ -21,15 +21,18 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 class PDFReportGenerator:
     """Generates PDF reports for query optimization results."""
     
-    # Colors
-    PRIMARY = colors.HexColor('#0066ff')
-    SUCCESS = colors.HexColor('#00a854')
-    WARNING = colors.HexColor('#faad14')
-    DANGER = colors.HexColor('#f5222d')
-    DARK = colors.HexColor('#1a1a1a')
-    GRAY = colors.HexColor('#666666')
-    LIGHT_GRAY = colors.HexColor('#f0f2f5')
-    BORDER = colors.HexColor('#e8e8e8')
+    # Colors - matching queryPdfTemplate.js design
+    PRIMARY = colors.HexColor('#3b82f6')      # Modern blue
+    SUCCESS = colors.HexColor('#22c55e')      # Green for success
+    WARNING = colors.HexColor('#faad14')      # Amber warning
+    DANGER = colors.HexColor('#f5222d')       # Red for errors
+    DARK = colors.HexColor('#1e293b')         # Dark slate for text/code blocks
+    TEXT_PRIMARY = colors.HexColor('#1a1a2e') # Primary text color
+    GRAY = colors.HexColor('#64748b')         # Muted text
+    LIGHT_GRAY = colors.HexColor('#f8fafc')   # Light background
+    BORDER = colors.HexColor('#e2e8f0')       # Subtle border
+    CODE_BG = colors.HexColor('#1e293b')      # Dark code block background
+    CODE_TEXT = colors.HexColor('#e4e4e7')    # Light text for code blocks
     
     # Scan types to track
     SEQ_SCAN_TYPES = ['Seq Scan', 'Parallel Seq Scan']
@@ -89,31 +92,33 @@ class PDFReportGenerator:
     
     def _setup_custom_styles(self):
         """Setup custom paragraph styles."""
-        # Title
+        # Title - matching queryPdfTemplate.js header style
         self.styles.add(ParagraphStyle(
             name='ReportTitle',
             parent=self.styles['Heading1'],
             fontSize=24,
-            spaceAfter=10,
+            spaceBefore=0,
+            spaceAfter=12,
             alignment=TA_CENTER,
-            textColor=self.PRIMARY,
+            textColor=self.DARK,
             fontName='Helvetica-Bold',
         ))
-        # Subtitle
+        # Subtitle - close to title
         self.styles.add(ParagraphStyle(
             name='Subtitle',
             fontSize=11,
             textColor=self.GRAY,
             alignment=TA_CENTER,
-            spaceAfter=20,
+            spaceBefore=0,
+            spaceAfter=15,
         ))
-        # Section headers
+        # Section headers - tighter spacing
         self.styles.add(ParagraphStyle(
             name='SectionHeader',
             parent=self.styles['Heading2'],
             fontSize=14,
-            spaceBefore=20,
-            spaceAfter=10,
+            spaceBefore=12,
+            spaceAfter=6,
             textColor=self.DARK,
             fontName='Helvetica-Bold',
             borderPadding=(5, 0, 5, 0),
@@ -128,16 +133,27 @@ class PDFReportGenerator:
             textColor=self.GRAY,
             fontName='Helvetica-Bold',
         ))
-        # Code style with wrapping
+        # Code style with wrapping - dark theme like queryPdfTemplate.js
         self.styles.add(ParagraphStyle(
             name='CodeParagraph',
             fontName='Courier',
-            fontSize=8,
-            leading=11,
-            textColor=self.DARK,
-            backColor=self.LIGHT_GRAY,
-            borderPadding=8,
+            fontSize=9,
+            leading=12,
+            textColor=self.CODE_TEXT,
+            backColor=self.CODE_BG,
+            borderPadding=10,
             wordWrap='CJK',  # Enable word wrapping
+        ))
+        # Smaller code style for recommendations
+        self.styles.add(ParagraphStyle(
+            name='CodeSmall',
+            fontName='Courier',
+            fontSize=8,
+            leading=10,
+            textColor=self.CODE_TEXT,
+            backColor=self.CODE_BG,
+            borderPadding=8,
+            wordWrap='CJK',
         ))
         # Normal text
         self.styles.add(ParagraphStyle(
@@ -205,15 +221,15 @@ class PDFReportGenerator:
         """Create report header."""
         elements = []
         
-        # Title
-        elements.append(Paragraph("🔍 Query Optimization Report", self.styles['ReportTitle']))
+        # Title - clean design without emoji (emojis render as squares in PDF)
+        elements.append(Paragraph("Query Optimization Report", self.styles['ReportTitle']))
         
         # Subtitle with metadata
         subtitle = f"Database: {query_history.connection.name} | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         elements.append(Paragraph(subtitle, self.styles['Subtitle']))
         
-        # Divider
-        elements.append(HRFlowable(width="100%", thickness=2, color=self.PRIMARY, spaceAfter=20))
+        # Blue accent divider like queryPdfTemplate.js
+        elements.append(HRFlowable(width="100%", thickness=2, color=self.PRIMARY, spaceAfter=25))
         
         return elements
     
@@ -274,29 +290,30 @@ class PDFReportGenerator:
         
         elements.append(Paragraph("📝 Original Query", self.styles['SectionHeader']))
         
-        # Query in a styled box - using Paragraph for proper wrapping
+        # Query in a styled dark box - like queryPdfTemplate.js
         query_text = query_history.original_query.strip()
         # Escape HTML special characters and preserve whitespace
         query_text = query_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
         query_text = query_text.replace('\n', '<br/>')
         query_text = query_text.replace('  ', '&nbsp;&nbsp;')
         
-        # Create wrapped code paragraph
-        query_para = Paragraph(f"<font face='Courier' size='9'>{query_text}</font>", self.styles['CodeParagraph'])
+        # Create wrapped code paragraph with dark theme
+        query_para = Paragraph(f"<font face='Courier' size='9' color='#e4e4e7'>{query_text}</font>", self.styles['CodeParagraph'])
         
-        # Wrap in table for background styling
+        # Wrap in table for dark background styling
         query_table = Table([[query_para]], colWidths=[self.content_width])
         query_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_GRAY),
-            ('BOX', (0, 0), (-1, -1), 1, self.BORDER),
-            ('LEFTPADDING', (0, 0), (-1, -1), 12),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('BACKGROUND', (0, 0), (-1, -1), self.CODE_BG),
+            ('BOX', (0, 0), (-1, -1), 0, self.CODE_BG),
+            ('LEFTPADDING', (0, 0), (-1, -1), 15),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 15),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('ROUNDEDCORNERS', [8, 8, 8, 8]),
         ]))
         
         elements.append(query_table)
-        elements.append(Spacer(1, 10))
+        elements.append(Spacer(1, 8))
         
         return elements
     
@@ -381,16 +398,17 @@ class PDFReportGenerator:
             plan_json = plan_json.replace('\n', '<br/>')
             plan_json = plan_json.replace('  ', '&nbsp;&nbsp;')
             
-            plan_para = Paragraph(f"<font face='Courier' size='7'>{plan_json}</font>", self.styles['CodeParagraph'])
+            plan_para = Paragraph(f"<font face='Courier' size='7' color='#e4e4e7'>{plan_json}</font>", self.styles['CodeSmall'])
             
             plan_table = Table([[plan_para]], colWidths=[self.content_width])
             plan_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_GRAY),
-                ('BOX', (0, 0), (-1, -1), 1, self.BORDER),
-                ('LEFTPADDING', (0, 0), (-1, -1), 8),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('BACKGROUND', (0, 0), (-1, -1), self.CODE_BG),
+                ('BOX', (0, 0), (-1, -1), 0, self.CODE_BG),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ('ROUNDEDCORNERS', [6, 6, 6, 6]),
             ]))
             
             elements.append(plan_table)
@@ -505,44 +523,65 @@ class PDFReportGenerator:
                 elements.append(Paragraph(scan_res_text, self.styles['Small']))
                 elements.append(Spacer(1, 8))
         
-        # Suggested indexes
-        if rec.suggested_indexes:
-            elements.append(Paragraph("<b>Suggested Indexes:</b>", self.styles['Small']))
-            for idx in rec.suggested_indexes:
+        # Optimization attempts info (if iterative)
+        attempts = getattr(rec, 'optimization_attempts', None) or 1
+        if attempts and attempts > 1:
+            attempts_text = f"<font color='#666666'><b>🔄 Optimization Iterations:</b> {attempts} attempts to meet goals</font>"
+            elements.append(Paragraph(attempts_text, self.styles['Small']))
+            elements.append(Spacer(1, 4))
+        
+        # All indexes that were applied (accumulated from all iterations)
+        all_indexes = getattr(rec, 'all_indexes_applied', None) or rec.suggested_indexes
+        if all_indexes:
+            if attempts and attempts > 1:
+                elements.append(Paragraph("<b>All Indexes Applied (accumulated):</b>", self.styles['Small']))
+            else:
+                elements.append(Paragraph("<b>Suggested Indexes:</b>", self.styles['Small']))
+            
+            for idx in all_indexes:
                 idx_text = idx.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                idx_para = Paragraph(f"<font face='Courier' size='8'>{idx_text}</font>", self.styles['CodeParagraph'])
+                idx_para = Paragraph(f"<font face='Courier' size='8' color='#e4e4e7'>{idx_text}</font>", self.styles['CodeSmall'])
                 idx_table = Table([[idx_para]], colWidths=[self.content_width])
                 idx_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_GRAY),
-                    ('BOX', (0, 0), (-1, -1), 1, self.BORDER),
-                    ('LEFTPADDING', (0, 0), (-1, -1), 8),
-                    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-                    ('TOPPADDING', (0, 0), (-1, -1), 6),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                    ('BACKGROUND', (0, 0), (-1, -1), self.CODE_BG),
+                    ('BOX', (0, 0), (-1, -1), 0, self.CODE_BG),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                    ('TOPPADDING', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                    ('ROUNDEDCORNERS', [6, 6, 6, 6]),
                 ]))
                 elements.append(idx_table)
-                elements.append(Spacer(1, 4))
+                elements.append(Spacer(1, 6))
         
-        # Optimized query
-        if rec.optimized_query and rec.optimized_query.strip():
-            elements.append(Paragraph("<b>Optimized Query:</b>", self.styles['Small']))
-            opt_text = rec.optimized_query.strip()
+        # Final optimized query (use accumulated version if available)
+        final_query = getattr(rec, 'final_optimized_query', None) or rec.optimized_query
+        query_was_rewritten = getattr(rec, 'query_was_rewritten', False)
+        
+        if final_query and final_query.strip():
+            if query_was_rewritten:
+                elements.append(Paragraph("<b>Final Optimized Query (rewritten):</b>", self.styles['Small']))
+            else:
+                elements.append(Paragraph("<b>Optimized Query:</b>", self.styles['Small']))
+            
+            opt_text = final_query.strip()
             opt_text = opt_text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
             opt_text = opt_text.replace('\n', '<br/>')
             opt_text = opt_text.replace('  ', '&nbsp;&nbsp;')
             
-            opt_para = Paragraph(f"<font face='Courier' size='8'>{opt_text}</font>", self.styles['CodeParagraph'])
+            opt_para = Paragraph(f"<font face='Courier' size='8' color='#e4e4e7'>{opt_text}</font>", self.styles['CodeSmall'])
             opt_table = Table([[opt_para]], colWidths=[self.content_width])
             opt_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_GRAY),
-                ('BOX', (0, 0), (-1, -1), 1, self.BORDER),
-                ('LEFTPADDING', (0, 0), (-1, -1), 8),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('BACKGROUND', (0, 0), (-1, -1), self.CODE_BG),
+                ('BOX', (0, 0), (-1, -1), 0, self.CODE_BG),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ('ROUNDEDCORNERS', [6, 6, 6, 6]),
             ]))
             elements.append(opt_table)
-            elements.append(Spacer(1, 4))
+            elements.append(Spacer(1, 6))
         
         # Tested Execution Plan
         if hasattr(rec, 'tested_plan') and rec.tested_plan:
@@ -560,15 +599,16 @@ class PDFReportGenerator:
             plan_json = plan_json.replace('\n', '<br/>')
             plan_json = plan_json.replace('  ', '&nbsp;&nbsp;')
             
-            plan_para = Paragraph(f"<font face='Courier' size='8'>{plan_json}</font>", self.styles['CodeParagraph'])
+            plan_para = Paragraph(f"<font face='Courier' size='8' color='#e4e4e7'>{plan_json}</font>", self.styles['CodeSmall'])
             plan_table = Table([[plan_para]], colWidths=[self.content_width])
             plan_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), self.LIGHT_GRAY),
-                ('BOX', (0, 0), (-1, -1), 1, self.BORDER),
-                ('LEFTPADDING', (0, 0), (-1, -1), 8),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('BACKGROUND', (0, 0), (-1, -1), self.CODE_BG),
+                ('BOX', (0, 0), (-1, -1), 0, self.CODE_BG),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ('ROUNDEDCORNERS', [6, 6, 6, 6]),
             ]))
             elements.append(plan_table)
         
